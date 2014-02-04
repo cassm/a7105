@@ -19,26 +19,30 @@
 
 // Set CS pin mode, initialse and set sensible defaults for SPI, set GIO1 as output on chip
 void A7105_Setup() {
+  // initialise the cs lock pin
   pinMode(CS_PIN, OUTPUT);
+  
+  // initialise SPI, set mode and byte order
   SPI.begin();
   SPI.setDataMode(SPI_MODE0);
-//  SPI.setClockDivider(21);
   SPI.setBitOrder(MSBFIRST);
-  // set gpio1 to SDO (MISO) by writing to reg GIO1S
+  
+  // set GIO1 to SDO (MISO) by writing to reg GIO1S
+  // (this instructs the chip to use GIO1 as the output pin)
   A7105_WriteReg(0x0b,0x19); // 0b011001
   Serial.println("Configuration complete.");
 }
 
-// triggers the chip to reset, then prints the contents of the mode register to serial
+// reset the chip
 void A7105_Reset()
 {
-    A7105_WriteReg(0x00, 0x00);
+  // this writes a null value to register 0x00, which triggers the reset
+  A7105_WriteReg(0x00, 0x00);
     delayMicroseconds(100);
-    Serial.print("Mode register: ");
-    Serial.println(A7105_ReadReg(0x00));
+    Serial.println("Reset complete");
 }
 
-// sets the transmitter power on the chip
+// set the transmitter power on the chip
 void A7105_SetPower(int power)
 {
     /*
@@ -70,14 +74,44 @@ void A7105_SetPower(int power)
 // Transmits the given strobe command. Commands are enumerated in a7105.h and detailed in the documentation
 void A7105_Strobe(enum A7105_State state)
 {
+    // NB: the CS pin must be lowered before and raised after every communication with the chip
     CS_LO();
     SPI.transfer(state);
     CS_HI();
 }
 
+/******************************************************************************
+                         SPI commands on the A7105
+ ******************************************************************************
+ 
+ The procedure for transferring data to and from the A7105 over SPI is not entirely obvious,
+ so I shall detail it here. The A7105 accepts two types of command, strobe commands and register 
+ access commands. Strobe commands are one byte in length, and register access commands are at least
+ two bytes in length.
+ 
+ The first byte comprises the opcode and the register address. Composition is as follows:
+    
+     The leftmost bit flags the command as either a strobe or a register access. 
+     1 = strobe, 0 = register access. Note, the strobe commands have this flag pre-raised.
+
+     The second leftmost bit flags a register access command as either read or write. 
+     1 = read, 0 = write.
+    
+     The rest of the bits are simply the register address.
+    
+ The rest of the bytes of a register access command is for transferring the data. The number of bytes in this section 
+ is dictated by the size of the register or buffer being accessed. For further details, see the documentation.
+ In a write command, we fill this byte with the data to be written. In a read command, we transmit a null value and 
+ allow SPI.transfer() to return the data it finds on the bus. 
+
+ ******************************************************************************/
+ 
+
 void A7105_WriteReg(u8 address, u8 data)
 {
     CS_LO();
+    
+    // the first byte transferred to the chip is the addressed register, the second is the data to be written
     SPI.transfer(address); // spi_xfer(SPI2, address);
     SPI.transfer(data);    // spi_xfer(SPI2, data); 
     CS_HI();
@@ -88,15 +122,13 @@ u8 A7105_ReadReg(u8 address)
     u8 data;
     int i;
     CS_LO();
-    // Bits A7-A0 make up the first u8.
-    // Bit A7 = 1 == Strobe.  A7 = 0 == access register.
-    // Bit a6 = 1 == read.  a6 = 0 == write. 
-    // bits 0-5 = address.  Assuming address < 64 the below says we want to read an address.
+
+    // raise the read flag on the address
     SPI.transfer(0x40 | address); 
-    //spi_xfer(SPI2, 0x40 | address);
+    
+    
     data = SPI.transfer(0);
     CS_HI();
-//    Serial.print(address); Serial.print(" "); Serial.println(data);
     return data;
 }
   

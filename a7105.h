@@ -16,6 +16,7 @@ u8 state;
 
 volatile s16 Channels[NUM_OUT_CHANNELS];
 
+// strobe commands. These are used to set the transceiver mode
 enum A7105_State {
     A7105_SLEEP     = 0x80,
     A7105_IDLE      = 0x90,
@@ -27,6 +28,7 @@ enum A7105_State {
     A7105_RST_RDPTR = 0xF0,
 };
 
+// register addresses
 enum {
     A7105_00_MODE         = 0x00,
     A7105_01_MODE_CONTROL = 0x01,
