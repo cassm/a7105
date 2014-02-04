@@ -1,25 +1,18 @@
-void loop() {
-  Serial.begin(115200);
-  int startTime, waitTime, hubsanWait,finishTime;
-  Serial.println("Initializing...");
-  A7105_Setup();
-  initialize();
-  Serial.println("Testing TX and RX mode...");
-  Serial.println("Setting TX mode...");
-  A7105_Strobe(A7105_TX);
-  Serial.print("00h = ");
-  Serial.println(A7105_ReadReg(0x00));
-  delayMicroseconds(100);
-  Serial.println("Setting RX mode...");
-  A7105_Strobe(A7105_RX);
-  Serial.print("00h = ");
-  Serial.println(A7105_ReadReg(0x00));
-  Serial.println("Testing complete.");
-  Serial.println("Re-initializing...");
-  A7105_Setup();
-  initialize();
-  Serial.println("Connection initialised.");
+void setup() {
   
+  Serial.begin(115200);
+  Serial.println("Initialising...");
+  A7105_Setup();
+  A7105_Reset();
+  A7105_Setup();
+  
+  initialize();
+  Serial.println("Initialisation Complete");
+}
+
+void loop() {
+  int startTime, waitTime, hubsanWait, finishTime;
+  /*
   startTime = micros();
   while (1) {
     if (Serial.available()>4) {
@@ -45,5 +38,13 @@ void loop() {
     delayMicroseconds(hubsanWait);
     startTime = micros();
   }
+  */
+  
+  //A7105_sniffchannel();
+  
+  //A7105_WriteReg(A7105_0F_CHANNEL, 0x28);  
+  //A7105_shoutchannel();
+  
+  A7105_scanchannels(allowed_ch);
 }
 

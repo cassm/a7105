@@ -23,6 +23,9 @@
 #include "a7105.h"
 
 
+volatile s16 Channels[NUM_OUT_CHANNELS];
+
+const u8 allowed_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
 
 enum {
     BIND_1,
@@ -78,47 +81,42 @@ int hubsan_init()
             break;
     }
     if (millis() - ms >= 500) {
-        Serial.print("Timeout 01: 02h calibration control register reads ");
-        Serial.println(A7105_ReadReg(0x02));
+        Serial.println("Error: VCO current calibration timed out.");
         return 0;
     }
     if_calibration1 = A7105_ReadReg(A7105_22_IF_CALIB_I);
     A7105_ReadReg(A7105_24_VCO_CURCAL);
     if(if_calibration1 & A7105_MASK_FBCF) {
-        Serial.print("Error: 24h FBFC Mask Test Failed");
+        Serial.println("Error: VCO current calibration failed");
         return 0;
     }
-
-    //VCO Current Calibration
-    //A7105_WriteReg(0x24, 0x13); //Recomended calibration from A7105 Datasheet
-
-    //VCO Bank Calibration
-    //A7105_WriteReg(0x26, 0x3b); //Recomended limits from A7105 Datasheet
 
     //VCO Bank Calibrate channel 0?
     //Set Channel
     A7105_WriteReg(A7105_0F_CHANNEL, 0);
     //VCO Calibration
-    A7105_WriteReg(0x02, 2);
+    A7105_WriteReg(A7105_02_CALC, 2);
     ms = millis();
     while(millis()  - ms < 500) {
         if(! A7105_ReadReg(0x02))
             break;
     }
     if (millis() - ms >= 500){
-          Serial.print("Timeout 02: 02h calibration control register reads ");
-          Serial.println( (int)A7105_ReadReg(0x02));
+          Serial.println("Error: VCO bank calibration timed out on channel 0x00");
           return 0;
         }
     vco_calibration0 = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
     if (vco_calibration0 & A7105_MASK_VBCF) {
-          Serial.print("Error: 25h Failed VBFC Mask Test");
+          Serial.println("Error: VCO bank calibration failed on channel 0x00");
           return 0;  
     }
 
     //Calibrate channel 0xa0?
     //Set Channel
-    A7105_WriteReg(A7105_0F_CHANNEL, 0xa0);
+    
+    //NB - this used to check calibration on 0xA0. 0xA0 appears to be haunted. Why is this?
+    
+    A7105_WriteReg(A7105_0F_CHANNEL, 0x28);
     //VCO Calibration
     A7105_WriteReg(A7105_02_CALC, 2);
     ms = millis();
@@ -127,13 +125,12 @@ int hubsan_init()
             break;
     }
     if (millis() - ms >= 500){
-          Serial.print("Timeout 03: 02h calibration control register reads ");
-          Serial.println( (int)A7105_ReadReg(0x02));
+          Serial.println("Error: VCO bank calibration timed out on channel 0x28");
           return 0;
         }
     vco_calibration1 = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
     if (vco_calibration1 & A7105_MASK_VBCF) {
-          Serial.print("Error: 25h Failed VBFC Mask Test");
+          Serial.println("Error: VCO bank calibration failed on channel 0x28");
           return 0;
         }
 
@@ -244,7 +241,7 @@ static u16 hubsan_cb()
     case BIND_4:
     case BIND_6:
         Serial.println("Clause 3");
-        if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
+        if(!A7105_ReadReg(A7105_00_MODE) & 0x01) {
             state = BIND_1; //
             Serial.println("Restart");
             return 4500; //No signal, restart binding procedure.  12msec elapsed since last write
@@ -308,11 +305,9 @@ static void initialize() {
            Serial.println("Hubsan_init failed.");
     }
     sessionid = rand();
-    channel = allowed_ch[rand() % sizeof(allowed_ch)];
+    channel = 0x28; //allowed_ch[rand() % sizeof(allowed_ch)];
     state = BIND_1;
 }
 
-
-void setup() { }
 
 

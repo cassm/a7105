@@ -36,11 +36,12 @@ void A7105_Setup() {
 // reset the chip
 void A7105_Reset()
 {
-  // this writes a null value to register 0x00, which triggers the reset
-  A7105_WriteReg(0x00, 0x00);
+    // this writes a null value to register 0x00, which triggers the reset
+    A7105_WriteReg(0x00, 0x00);
     delayMicroseconds(100);
     Serial.println("Reset complete");
 }
+
 
 // set the transmitter power on the chip
 void A7105_SetPower(int power)
@@ -107,16 +108,17 @@ void A7105_Strobe(enum A7105_State state)
  ******************************************************************************/
  
 
+
+// Normal registers, essentially everything except the FIFO buffer and the ID register,
+// hold only one byte. These two functions therefore transfer only one byte.
+
 void A7105_WriteReg(u8 address, u8 data)
 {
     CS_LO();
-    
-    // the first byte transferred to the chip is the addressed register, the second is the data to be written
     SPI.transfer(address); // spi_xfer(SPI2, address);
     SPI.transfer(data);    // spi_xfer(SPI2, data); 
     CS_HI();
 }
-
 u8 A7105_ReadReg(u8 address)
 {
     u8 data;
@@ -125,13 +127,12 @@ u8 A7105_ReadReg(u8 address)
 
     // raise the read flag on the address
     SPI.transfer(0x40 | address); 
-    
-    
     data = SPI.transfer(0);
     CS_HI();
     return data;
 }
-  
+ 
+ 
 void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel)
 {
     int i;
@@ -152,7 +153,7 @@ void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel)
 
 void A7105_ReadData(u8 *dpbuffer, u8 len)
 {
-    A7105_Strobe(A7105_RST_RDPTR); //A7105_RST_RDPTR
+    A7105_Strobe(A7105_RST_RDPTR);
     for(int i = 0; i < len; i++) {
         dpbuffer[i] = A7105_ReadReg(0x05);
     }
@@ -228,7 +229,7 @@ void A7105_shoutchannel() {
            // allow 20 loops for the transmitting flag to clear
            for(i = 0; i< 20; i++) {
                if(! (A7105_ReadReg(A7105_00_MODE) & 0x01))
-                 break;
+                   break;
            }
            
         // if not cleared, give message and quit
@@ -245,16 +246,19 @@ void A7105_shoutchannel() {
 }
 
 // sniffs the currently set channel, prints packets to serial
-void A7105_sniffchannel() {
+int A7105_sniffchannel() {
        A7105_Strobe(A7105_RX);  
        delayMicroseconds(3000);
        if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
            A7105_ReadData(packet, 16);
            printpacket(packet);
+           return 1;
        }
+       else
+         return 0;
 }
 
-// version of ffchannel which sniffs the rovided channel
+// version of sniffchannel which sniffs a channel other than the one which is currently set.
 void A7105_sniffchannel(u8 _channel) {
       Serial.print("Switching to channel ");
       Serial.println(_channel);
@@ -268,14 +272,26 @@ void A7105_sniffchannel(u8 _channel) {
 // function to sniff a list of channels and see what is being broadcast on them
 // attempts sniffing 20 times on each channel before looping, print any results to serial
 void A7105_scanchannels(const u8 channels[]) {
-      for (int i = 0 ; i < sizeof(channels) ; i++) {
+    int packetsreceived;
+    for (int i = 0 ; i < sizeof(channels) ; i++) {
+          packetsreceived = 0;
           Serial.println("");
           Serial.print("Switching to channel ");
           Serial.println(channels[i]);
           Serial.println("");
           A7105_WriteReg(A7105_0F_CHANNEL, channels[i]);
           for (int j = 0 ; j < 20 ; j++) {
-              A7105_sniffchannel();
+              packetsreceived += A7105_sniffchannel();
+          }
+          if (packetsreceived) {
+              Serial.print(packetsreceived);
+              Serial.print(" packets received on channel ");
+              Serial.println(channels[i], HEX);
+          }
+          else {
+              Serial.print("Channel ");
+              Serial.print(channels[i], HEX);
+              Serial.println(" is clear.");
           }
       }
 }

@@ -9,12 +9,10 @@
 
 u8 packet[16];
 u8 channel;
-const u8 allowed_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
 unsigned long sessionid;
 const unsigned long txid = 0xdb042679;
 u8 state;
 
-volatile s16 Channels[NUM_OUT_CHANNELS];
 
 // strobe commands. These are used to set the transceiver mode
 enum A7105_State {
@@ -118,6 +116,6 @@ void printpacket(u8 packet[]);
 void A7105_shoutchannel();
 void A7105_scanchannels(const u8 channels[]);
 void A7105_sniffchannel(u8 _channel);
-void A7105_sniffchannel();
+int A7105_sniffchannel();
 
 #endif
