@@ -1,6 +1,21 @@
 #ifndef _IFACE_A7105_H_
 #define _IFACE_A7105_H_
 
+
+
+#define CS_PIN 10
+#define CS_HI() digitalWrite(CS_PIN, HIGH);
+#define CS_LO() digitalWrite(CS_PIN, LOW);
+
+u8 packet[16];
+u8 channel;
+const u8 allowed_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
+unsigned long sessionid;
+const unsigned long txid = 0xdb042679;
+u8 state;
+
+volatile s16 Channels[NUM_OUT_CHANNELS];
+
 enum A7105_State {
     A7105_SLEEP     = 0x80,
     A7105_IDLE      = 0x90,
@@ -64,7 +79,7 @@ enum {
     A7105_30_IFAT         = 0x30,
     A7105_31_RSCALE       = 0x31,
     A7105_32_FILTER_TEST  = 0x32,
-};
+m};
 #define A7105_0F_CHANNEL A7105_0F_PLL_I
 
 enum A7105_MASK {
@@ -72,15 +87,35 @@ enum A7105_MASK {
     A7105_MASK_VBCF = 1 << 3,
 };
 
-void A7105_Initialize();
-void A7105_WriteReg(u8 addr, u8 value);
-void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel);
-void A7105_ReadData(u8 *dpbuffer, u8 len);
-u8 A7105_ReadReg(u8 addr);
+
+// Set CS pin mode, initialse and set sensible defaults for SPI, set GIO1 as output on chip
+void A7105_Setup();
+
+// Triggers the chip to reset, then prints the contents of the mode register to serial
 void A7105_Reset();
-void A7105_WriteID(u32 id);
-void A7105_Strobe(enum A7105_State);
+
+// sets the transmitter power on the chip
 void A7105_SetPower(int power);
 
+// Transmits the given strobe command. Commands are enumerated in a7105.h and detailed in the documentation
+void A7105_Strobe(enum A7105_State);
+
+
+void A7105_WriteID(u32 id);
+void A7105_ReadID();
+
+void A7105_WriteReg(u8 addr, u8 value);
+u8 A7105_ReadReg(u8 addr);
+
+void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel);
+void A7105_ReadData(u8 *dpbuffer, u8 len);
+
+void make_test_packet();
+void printpacket(u8 packet[]);
+
+void A7105_shoutchannel();
+void A7105_scanchannels(const u8 channels[]);
+void A7105_sniffchannel(u8 _channel);
+void A7105_sniffchannel();
 
 #endif

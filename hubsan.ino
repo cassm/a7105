@@ -22,14 +22,7 @@
 //#include "config.h"
 #include "a7105.h"
 
-volatile s16 Channels[NUM_OUT_CHANNELS];
 
-u8 packet[16];
-u8 channel;
-const u8 allowed_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
-unsigned long sessionid;
-const unsigned long txid = 0xdb042679;
-u8 state;
 
 enum {
     BIND_1,
@@ -53,9 +46,13 @@ int hubsan_init()
     u8 if_calibration1;
     u8 vco_calibration0;
     u8 vco_calibration1;
-    //u8 vco_current;
+    //u8 vco_current;m
 
+    //set chip ID
     A7105_WriteID(0x55201041);
+    //read back chip ID for sanity checking. Works 29/01/14
+    //A7105_ReadID();
+    
     A7105_WriteReg(A7105_01_MODE_CONTROL, 0x63);
     A7105_WriteReg(A7105_03_FIFOI, 0x0f);
     A7105_WriteReg(A7105_0D_CLOCK, 0x05);
@@ -80,12 +77,15 @@ int hubsan_init()
         if(! A7105_ReadReg(0x02))
             break;
     }
-    if (millis() - ms >= 500)
+    if (millis() - ms >= 500) {
+        Serial.print("Timeout 01: 02h calibration control register reads ");
+        Serial.println(A7105_ReadReg(0x02));
         return 0;
+    }
     if_calibration1 = A7105_ReadReg(A7105_22_IF_CALIB_I);
     A7105_ReadReg(A7105_24_VCO_CURCAL);
     if(if_calibration1 & A7105_MASK_FBCF) {
-        //Calibration failed...what do we do?
+        Serial.print("Error: 24h FBFC Mask Test Failed");
         return 0;
     }
 
@@ -105,12 +105,15 @@ int hubsan_init()
         if(! A7105_ReadReg(0x02))
             break;
     }
-    if (millis() - ms >= 500)
-        return 0;
+    if (millis() - ms >= 500){
+          Serial.print("Timeout 02: 02h calibration control register reads ");
+          Serial.println( (int)A7105_ReadReg(0x02));
+          return 0;
+        }
     vco_calibration0 = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
     if (vco_calibration0 & A7105_MASK_VBCF) {
-        //Calibration failed...what do we do?
-        return 0;
+          Serial.print("Error: 25h Failed VBFC Mask Test");
+          return 0;  
     }
 
     //Calibrate channel 0xa0?
@@ -123,17 +126,22 @@ int hubsan_init()
         if(! A7105_ReadReg(A7105_02_CALC))
             break;
     }
-    if (millis() - ms >= 500)
-        return 0;
+    if (millis() - ms >= 500){
+          Serial.print("Timeout 03: 02h calibration control register reads ");
+          Serial.println( (int)A7105_ReadReg(0x02));
+          return 0;
+        }
     vco_calibration1 = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
     if (vco_calibration1 & A7105_MASK_VBCF) {
-        //Calibration failed...what do we do?
-    }
+          Serial.print("Error: 25h Failed VBFC Mask Test");
+          return 0;
+        }
 
     //Reset VCO Band calibration
     //A7105_WriteReg(0x25, 0x08);
 
     A7105_SetPower(TXPOWER_150mW);
+    Serial.println("Power: Set 150mW");
 
     A7105_Strobe(A7105_STANDBY);
     return 1;
@@ -204,12 +212,13 @@ static void hubsan_build_packet()
 
 static u16 hubsan_cb()
 {
-    int i;
+    int i, j;
     switch(state) {
     case BIND_1:
     case BIND_3:
     case BIND_5:
     case BIND_7:
+        Serial.println("Clause 1");
         hubsan_build_bind_packet(state == BIND_7 ? 9 : (state == BIND_5 ? 1 : state + 1 - BIND_1));
         A7105_Strobe(A7105_STANDBY);
         A7105_WriteData(packet, 16, channel);
@@ -219,6 +228,7 @@ static u16 hubsan_cb()
     case BIND_3 | WAIT_WRITE:
     case BIND_5 | WAIT_WRITE:
     case BIND_7 | WAIT_WRITE:
+        Serial.println("Clause 2");
         //wait for completion
         for(i = 0; i< 20; i++) {
           if(! (A7105_ReadReg(A7105_00_MODE) & 0x01))
@@ -226,8 +236,6 @@ static u16 hubsan_cb()
         }
         if (i == 20)
             Serial.println("Failed to complete write\n");
-       // else 
-       //     Serial.println("Completed write\n");
         A7105_Strobe(A7105_RX);
         state &= ~WAIT_WRITE;
         state++;
@@ -235,23 +243,29 @@ static u16 hubsan_cb()
     case BIND_2:
     case BIND_4:
     case BIND_6:
+        Serial.println("Clause 3");
         if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
-            state = BIND_1; //Serial.println("Restart");
+            state = BIND_1; //
+            Serial.println("Restart");
             return 4500; //No signal, restart binding procedure.  12msec elapsed since last write
         } 
 
        A7105_ReadData(packet, 16);
+       printpacket(packet);
         state++;
         if (state == BIND_5)
             A7105_WriteID((packet[2] << 24) | (packet[3] << 16) | (packet[4] << 8) | packet[5]);
         
         return 500;  //8msec elapsed time since last write;
     case BIND_8:
+        Serial.println("Clause 4");
         if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
             state = BIND_7;
             return 15000; //22.5msec elapsed since last write
         }
         A7105_ReadData(packet, 16);
+       // test to see what is being received
+       printpacket(packet);
         if(packet[1] == 9) {
             state = DATA_1;
             A7105_WriteReg(A7105_1F_CODE_I, 0x0F);
@@ -262,12 +276,14 @@ static u16 hubsan_cb()
             return 15000; //22.5 msec elapsed since last write
         }
     case DATA_1:
+        Serial.println("Clause 5");
         //Keep transmit power in sync
         A7105_SetPower(TXPOWER_150mW);
     case DATA_2:
     case DATA_3:
     case DATA_4:
     case DATA_5:
+        Serial.println("Clause 6");
         hubsan_build_packet();
         A7105_WriteData(packet, 16, state == DATA_5 ? channel + 0x23 : channel);
         if (state == DATA_5)
@@ -282,8 +298,14 @@ static u16 hubsan_cb()
 static void initialize() {
     while(1) {
         A7105_Reset();
-        if (hubsan_init())
-            break;
+        Serial.println("Reset complete.");
+        A7105_Setup();
+        if (hubsan_init()) {
+          Serial.println("Hubsan_init successful.");
+          break;
+        }
+        else
+           Serial.println("Hubsan_init failed.");
     }
     sessionid = rand();
     channel = allowed_ch[rand() % sizeof(allowed_ch)];
