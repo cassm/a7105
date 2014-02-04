@@ -1,6 +1,9 @@
 #ifndef _IFACE_A7105_H_
 #define _IFACE_A7105_H_
 
+const u8 hubsan_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
+
+
 enum A7105_State {
     A7105_SLEEP     = 0x80,
     A7105_IDLE      = 0x90,
@@ -64,7 +67,7 @@ enum {
     A7105_30_IFAT         = 0x30,
     A7105_31_RSCALE       = 0x31,
     A7105_32_FILTER_TEST  = 0x32,
-};
+m};
 #define A7105_0F_CHANNEL A7105_0F_PLL_I
 
 enum A7105_MASK {
@@ -72,7 +75,8 @@ enum A7105_MASK {
     A7105_MASK_VBCF = 1 << 3,
 };
 
-void A7105_Initialize();
+void printpacket(u8 packet[]);
+void A7105_Setup();
 void A7105_WriteReg(u8 addr, u8 value);
 void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel);
 void A7105_ReadData(u8 *dpbuffer, u8 len);
@@ -81,6 +85,9 @@ void A7105_Reset();
 void A7105_WriteID(u32 id);
 void A7105_Strobe(enum A7105_State);
 void A7105_SetPower(int power);
-
+int hubsan_init();
+static void initialize();
+static void update_crc();
+void makepacket();
 
 #endif
