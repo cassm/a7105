@@ -3,8 +3,6 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Initialising...");
   A7105_Setup();
-  A7105_Reset();
-  A7105_Setup();
   
   initialize();
   Serial.println("Initialisation Complete");
@@ -42,9 +40,9 @@ void loop() {
   
   //A7105_sniffchannel();
   
-  //A7105_WriteReg(A7105_0F_CHANNEL, 0x28);  
-  //A7105_shoutchannel();
+  A7105_WriteReg(A7105_0F_CHANNEL, 0x28);  
+  A7105_shoutchannel();
   
-  A7105_scanchannels(allowed_ch);
+  //A7105_scanchannels(allowed_ch);
 }
 

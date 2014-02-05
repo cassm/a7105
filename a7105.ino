@@ -30,6 +30,7 @@ void A7105_Setup() {
   // set GIO1 to SDO (MISO) by writing to reg GIO1S
   // (this instructs the chip to use GIO1 as the output pin)
   A7105_WriteReg(0x0b,0x19); // 0b011001
+  
   Serial.println("Configuration complete.");
 }
 
@@ -249,7 +250,7 @@ void A7105_shoutchannel() {
 int A7105_sniffchannel() {
        A7105_Strobe(A7105_RX);  
        delayMicroseconds(3000);
-       if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
+       if(!A7105_ReadReg(A7105_00_MODE) & 0x01) {
            A7105_ReadData(packet, 16);
            printpacket(packet);
            return 1;
