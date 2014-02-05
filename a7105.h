@@ -110,7 +110,7 @@ u8 A7105_ReadReg(u8 addr);
 void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel);
 void A7105_ReadData(u8 *dpbuffer, u8 len);
 
-void make_test_packet();
+void make_test_packet(u8 testpacket[]);
 void printpacket(u8 packet[]);
 
 void A7105_shoutchannel();

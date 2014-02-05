@@ -188,22 +188,22 @@ void A7105_ReadID()
 
 
 // make a distinctive test packet to test that transmission is working correctly
-void make_test_packet() {
-    packet[0] = 0x00;
-    packet[1] = 0x11;
-    packet[2] = 0x22;
-    packet[3] = 0x33;
-    packet[4] = 0x44;
-    packet[5] = 0x55;
-    packet[6] = 0x66;
-    packet[7] = 0x77;
-    packet[8] = 0x88;
-    packet[9] = 0x99;
-    packet[10] = 0xaa;
-    packet[11] = 0xbb;
-    packet[12] = 0xcc;
-    packet[13] = 0xdd;
-    packet[14] = 0xee;
+void make_test_packet(u8 testpacket[]) {
+    testpacket[0] = 0x00;
+    testpacket[1] = 0x11;
+    testpacket[2] = 0x22;
+    testpacket[3] = 0x33;
+    testpacket[4] = 0x44;
+    testpacket[5] = 0x55;
+    testpacket[6] = 0x66;
+    testpacket[7] = 0x77;
+    testpacket[8] = 0x88;
+    testpacket[9] = 0x99;
+    testpacket[10] = 0xaa;
+    testpacket[11] = 0xbb;
+    testpacket[12] = 0xcc;
+    testpacket[13] = 0xdd;
+    testpacket[14] = 0xee;
     update_crc();
 }
 
@@ -221,11 +221,13 @@ void printpacket(u8 packet[]) {
 // shouts pockets on the current channel
 void A7105_shoutchannel() {
        int i;
-       make_test_packet();
+       u8 testpacket[16];
        while(1) {
+           // build distinctive test packet
+           make_test_packet(testpacket);
            // write packet into fifo
            A7105_Strobe(A7105_STANDBY);
-           A7105_WriteData(packet, 16, channel);
+           A7105_WriteData(testpacket, 16, channel);
            delayMicroseconds(3000);
            // allow 20 loops for the transmitting flag to clear
            for(i = 0; i< 20; i++) {
@@ -248,11 +250,13 @@ void A7105_shoutchannel() {
 
 // sniffs the currently set channel, prints packets to serial
 int A7105_sniffchannel() {
+       u8 receivedpacket[16];
+       receivedpacket[4] = 0xFF;
        A7105_Strobe(A7105_RX);  
        delayMicroseconds(3000);
        if(!A7105_ReadReg(A7105_00_MODE) & 0x01) {
-           A7105_ReadData(packet, 16);
-           printpacket(packet);
+           A7105_ReadData(receivedpacket, 16);
+           printpacket(receivedpacket);
            return 1;
        }
        else
@@ -278,7 +282,7 @@ void A7105_scanchannels(const u8 channels[]) {
           packetsreceived = 0;
           Serial.println("");
           Serial.print("Switching to channel ");
-          Serial.println(channels[i]);
+          Serial.println(channels[i], HEX);
           Serial.println("");
           A7105_WriteReg(A7105_0F_CHANNEL, channels[i]);
           for (int j = 0 ; j < 20 ; j++) {
