@@ -17,6 +17,8 @@
 #include "config.h"
 #include "a7105.h"
 
+
+
 // Set CS pin mode, initialse and set sensible defaults for SPI, set GIO1 as output on chip
 void A7105_Setup() {
   // initialise the cs lock pin
@@ -41,8 +43,72 @@ void A7105_Reset()
     A7105_WriteReg(0x00, 0x00);
     delayMicroseconds(100);
     Serial.println("Reset complete");
+}    
+
+int A7105_calibrate_IF() {
+    u8 calibration_result;
+    
+    //IF Filter Bank Calibration
+    // write 001 to this register, chip will then calibrate IF filter bank, and lower the flag when the calibration is complete
+    A7105_WriteReg(0x02, 1);
+ 
+    // I HAVE NO IDEA WHETHER THIS DOES ANYTHING
+    A7105_ReadReg(0x02);
+    
+    // if 02h has not cleared within 500ms, give a timeout error and abort.
+    unsigned long ms = millis();
+    while(millis()  - ms < 500) {
+        if(! A7105_ReadReg(0x02))
+            break;
+    }
+    if (millis() - ms >= 500) {
+        Serial.println("Error: IF filter calibration has timed out.");
+        return 1;
+    }
+    
+    // read IF calibration status
+    calibration_result = A7105_ReadReg(A7105_22_IF_CALIB_I);
+
+    // this seems redundant. Is it?
+    A7105_ReadReg(A7105_24_VCO_CURCAL);
+
+    // check to see if auto calibration failure flag is set. If so, give error message and abort
+    if(calibration_result & A7105_MASK_FBCF) {
+        Serial.println("Error: IF filter calibration failed.");
+        return 2;
+    }
 }
 
+int A7105_calibrate_VCB(u8 channel) {
+    u8 calibration_result;
+    
+    A7105_WriteReg(A7105_0F_CHANNEL, channel);
+    
+    //Initiate VCO bank calibration. register will auto clear when complete
+    A7105_WriteReg(0x02, 2);
+    
+    // allow 500ms for calibration to complete
+    unsigned long ms = millis();
+    while(millis()  - ms < 500) {
+        if(! A7105_ReadReg(0x02))
+            break;
+    }
+    
+    // if not complete, issue timeout error and abort
+    if (millis() - ms >= 500){
+          Serial.print("Error: VCO bank calibration timed out on channel ");
+          Serial.println(channel);
+          return 1;
+        }
+    
+    // if auto calibration fail flag is high, print error and abort
+    calibration_result = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
+    if (calibration_result & A7105_MASK_VBCF) {
+          Serial.print("Error: VCO bank calibration failed on channel ");
+          Serial.println(channel);
+          return 2;  
+    }
+}
 
 // set the transmitter power on the chip
 void A7105_SetPower(int power)
@@ -73,15 +139,6 @@ void A7105_SetPower(int power)
     A7105_WriteReg(0x28, (pac << 3) | tbg);
 }
 
-// Transmits the given strobe command. Commands are enumerated in a7105.h and detailed in the documentation
-void A7105_Strobe(enum A7105_State state)
-{
-    // NB: the CS pin must be lowered before and raised after every communication with the chip
-    CS_LO();
-    SPI.transfer(state);
-    CS_HI();
-}
-
 /******************************************************************************
                          SPI commands on the A7105
  ******************************************************************************
@@ -108,7 +165,14 @@ void A7105_Strobe(enum A7105_State state)
 
  ******************************************************************************/
  
-
+// Transmits the given strobe command. Commands are enumerated in a7105.h and detailed in the documentation
+void A7105_Strobe(enum A7105_State state)
+{
+    // NB: the CS pin must be lowered before and raised after every communication with the chip
+    CS_LO();
+    SPI.transfer(state);
+    CS_HI();
+}
 
 // Normal registers, essentially everything except the FIFO buffer and the ID register,
 // hold only one byte. These two functions therefore transfer only one byte.
@@ -148,13 +212,22 @@ void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel)
     A7105_WriteReg(0x0F, channel);
 
     CS_LO();
-    SPI.transfer(A7105_TX); // strobe command to actually transmit the daat
+    SPI.transfer(A7105_TX); // strobe command to actually transmit the data
     CS_HI();
 }
 
 void A7105_ReadData(u8 *dpbuffer, u8 len)
 {
     A7105_Strobe(A7105_RST_RDPTR);
+    /*
+    CS_LO();
+    SPI.transfer(0x05 | 0x40);
+    for(int i = 0; i < len; i++) {
+        dpbuffer[i] = SPI.transfer(0);
+    }
+    CS_HI();
+    */
+    
     for(int i = 0; i < len; i++) {
         dpbuffer[i] = A7105_ReadReg(0x05);
     }
@@ -221,7 +294,6 @@ void printpacket(u8 packet[]) {
 // shouts pockets on the current channel
 void A7105_shoutchannel() {
        int i;
-       u8 testpacket[16];
        while(1) {
            // build distinctive test packet
            make_test_packet(testpacket);
@@ -250,11 +322,9 @@ void A7105_shoutchannel() {
 
 // sniffs the currently set channel, prints packets to serial
 int A7105_sniffchannel() {
-       u8 receivedpacket[16];
-       receivedpacket[4] = 0xFF;
        A7105_Strobe(A7105_RX);  
        delayMicroseconds(3000);
-       if(!A7105_ReadReg(A7105_00_MODE) & 0x01) {
+       if(!(A7105_ReadReg(A7105_00_MODE) & 0x01)) {
            A7105_ReadData(receivedpacket, 16);
            printpacket(receivedpacket);
            return 1;
@@ -278,7 +348,7 @@ void A7105_sniffchannel(u8 _channel) {
 // attempts sniffing 20 times on each channel before looping, print any results to serial
 void A7105_scanchannels(const u8 channels[]) {
     int packetsreceived;
-    for (int i = 0 ; i < sizeof(channels) ; i++) {
+    for (int i = 0 ; i < 12 ; i++) {
           packetsreceived = 0;
           Serial.println("");
           Serial.print("Switching to channel ");

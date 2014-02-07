@@ -8,6 +8,8 @@
 #define CS_LO() digitalWrite(CS_PIN, LOW);
 
 u8 packet[16];
+u8 testpacket[16];
+u8 receivedpacket[16];
 u8 channel;
 unsigned long sessionid;
 const unsigned long txid = 0xdb042679;

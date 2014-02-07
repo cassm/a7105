@@ -46,11 +46,6 @@ enum {
 
 int hubsan_init()
 {
-    u8 if_calibration1;
-    u8 vco_calibration0;
-    u8 vco_calibration1;
-    //u8 vco_current;
-
     //set chip ID
     A7105_WriteID(0x55201041);
     //read back chip ID for sanity checking. Works 29/01/14
@@ -91,99 +86,11 @@ int hubsan_init()
 
     // set to standby mode
     A7105_Strobe(A7105_STANDBY);
-
-    //IF Filter Bank Calibration
-    // write 001 to this register, chip will then calibrate IF filter bank, and lower the flag when the calibration is complete
-    A7105_WriteReg(0x02, 1);
- 
-    // I HAVE NO IDEA WHETHER THIS DOES ANYTHING
-    A7105_ReadReg(0x02);
     
-    // if 02h has not cleared within 500ms, give a timeout error and abort.
-    unsigned long ms = millis();
-    while(millis()  - ms < 500) {
-        if(! A7105_ReadReg(0x02))
-            break;
-    }
-    if (millis() - ms >= 500) {
-        Serial.print("Error: IF filter calibration has timed out.");
-        Serial.println(A7105_ReadReg(0x02));
+    if (A7105_calibrate_IF() || A7105_calibrate_VCB(0x00) || A7105_calibrate_VCB(0xA0)) {
+        Serial.println("Error: calibration failed");
         return 0;
     }
-    
-    // read IF calibration status
-    if_calibration1 = A7105_ReadReg(A7105_22_IF_CALIB_I);
-
-    // this seems redundant. Is it?
-    A7105_ReadReg(A7105_24_VCO_CURCAL);
-
-    // check to see if auto calibration failure flag is set. If so, give error message and abort
-    if(if_calibration1 & A7105_MASK_FBCF) {
-        Serial.print("Error: IF filter calibration failed.");
-        return 0;
-    }
-
-
-    // These commands were commented out in the code when I got it
-    
-    //VCO Current Calibration
-    //A7105_WriteReg(0x24, 0x13); //Recomended calibration from A7105 Datasheet
-    //VCO Bank Calibration
-    //A7105_WriteReg(0x26, 0x3b); //Recomended limits from A7105 Datasheet
-    //VCO Bank Calibrate channel 0?
-    
-    //Set Channel to 0
-    A7105_WriteReg(A7105_0F_CHANNEL, 0);
-    
-    //Initiate VCO bank calibration. register will auto clear when complete
-    A7105_WriteReg(0x02, 2);
-    
-    // allow 500ms for calibration to complete
-    ms = millis();
-    while(millis()  - ms < 500) {
-        if(! A7105_ReadReg(0x02))
-            break;
-    }
-    
-    // if not complete, issue timeout error and abort
-    if (millis() - ms >= 500){
-          Serial.print("Error: VCO bank calibration timed out. (channel 0x00)");
-          return 0;
-        }
-    
-    // if auto calibration fail flag is high, print error and abort
-    vco_calibration0 = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
-    if (vco_calibration0 & A7105_MASK_VBCF) {
-          Serial.print("Error: VCO bank calibration failed. (channel 0x00)");
-          return 0;  
-    }
-
-    //Calibrate channel 0xa0?
-    //set channel to a0. Unsure of the utility of this.
-    A7105_WriteReg(A7105_0F_CHANNEL, 0xa0);
-    
-    //Initiate VCO bank calibration. register will auto clear when complete
-    A7105_WriteReg(A7105_02_CALC, 2);
-    
-    // allow 500ms for calibration to complete
-    ms = millis();
-    while(millis()  - ms < 500) {
-        if(! A7105_ReadReg(A7105_02_CALC))
-            break;
-    }
-    
-    // if not complete, issue timeout error and abort
-    if (millis() - ms >= 500){
-          Serial.print("Error: VCO bank calibration timed out. (channel 0xA0)");
-          return 0;
-        }
-        
-    // if auto calibration fail flag is high, print error and abort
-    vco_calibration1 = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
-    if (vco_calibration1 & A7105_MASK_VBCF) {
-          Serial.print("Error: VCO bank calibration failed. (channel 0xA0)");
-          return 0;
-        }
 
     //Reset VCO Band calibration
     //A7105_WriteReg(0x25, 0x08);
@@ -354,7 +261,7 @@ static void initialize() {
            Serial.println("Hubsan_init failed.");
     }
     sessionid = rand();
-    channel = 0x28; //allowed_ch[rand() % sizeof(allowed_ch)];
+    channel = allowed_ch[rand() % sizeof(allowed_ch)]; //0x28; 
     state = BIND_1;
 }
 
