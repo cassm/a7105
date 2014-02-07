@@ -42,10 +42,10 @@ void loop() {
   */
   
   
-    
+   Serial.println(A7105_ReadReg(0x00)); 
   //A7105_shoutchannel();
   //A7105_sniffchannel();
   
-  A7105_scanchannels(allowed_ch);
+  //A7105_scanchannels(allowed_ch);
 }
 

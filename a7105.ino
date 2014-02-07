@@ -42,6 +42,7 @@ void A7105_Reset()
     // this writes a null value to register 0x00, which triggers the reset
     A7105_WriteReg(0x00, 0x00);
     delayMicroseconds(100);
+    A7105_WriteReg(0x0b,0x19);
     Serial.println("Reset complete");
 }    
 
