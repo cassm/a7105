@@ -5,8 +5,8 @@ void setup() {
   A7105_Setup();
   
   initialize();
-  channel = 0x28;
-  A7105_WriteReg(A7105_0F_CHANNEL, 0x28);
+  channel = 0x32;
+  A7105_WriteReg(A7105_0F_CHANNEL, 0x32);
   Serial.println("Initialisation Complete");
 }
 
@@ -32,7 +32,7 @@ void loop() {
     Serial.println(state);
     hubsanWait = hubsan_cb();
     finishTime=micros();
-    waitTime m= hubsanWait - (micros() - startTime);
+    waitTime = hubsanWait - (micros() - startTime);
     //Serial.print("hubsanWait: " ); Serial.println(hubsanWait);
     //Serial.print("waitTime: " ); Serial.println(waitTime);
     //Serial.println(hubsanWait);
@@ -42,10 +42,11 @@ void loop() {
   */
   
   
-   //Serial.println(A7105_ReadReg(0x00)); 
+  //Serial.println(A7105_ReadReg(0x00)); 
   //A7105_shoutchannel();
   //A7105_sniffchannel();
   
-  A7105_scanchannels(allowed_ch);
+  //A7105_scanchannels(allowed_ch);
+  eavesdrop();
 }
 

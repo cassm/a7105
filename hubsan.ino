@@ -25,8 +25,6 @@
 
 volatile s16 Channels[NUM_OUT_CHANNELS];
 
-const u8 allowed_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
-
 enum {
     BIND_1,
     BIND_2,
@@ -117,6 +115,9 @@ static void hubsan_build_bind_packet(u8 state)
     packet[3] = (sessionid >> 16) & 0xff;
     packet[4] = (sessionid >>  8) & 0xff;
     packet[5] = (sessionid >>  0) & 0xff;
+    for (int i = 6 ; i < 15 ; i++)
+         packet[i] = 0;
+    /*
     packet[6] = 0x08;
     packet[7] = 0xe4; //???
     packet[8] = 0xea;
@@ -126,6 +127,7 @@ static void hubsan_build_bind_packet(u8 state)
     packet[12] = (txid >> 16) & 0xff;
     packet[13] = (txid >>  8) & 0xff;
     packet[14] = (txid >>  0) & 0xff;
+    */
     update_crc();
 }
 

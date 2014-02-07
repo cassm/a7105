@@ -18,6 +18,8 @@
 #include "a7105.h"
 
 
+const u8 allowed_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
+
 
 // Set CS pin mode, initialse and set sensible defaults for SPI, set GIO1 as output on chip
 void A7105_Setup() {
@@ -286,7 +288,7 @@ void make_test_packet(u8 testpacket[]) {
 // prnt the contents of packet in a human-readable way
 void printpacket(u8 packet[]) {
   int j;
-  Serial.print("Packet received: ");
+  //Serial.print("Packet received: ");
   for (j = 0 ; j < 16 ; j++) {
       Serial.print(packet[j], HEX);
       Serial.print(" ");
@@ -320,6 +322,60 @@ void A7105_shoutchannel() {
             Serial.println("Write successful\n");
             break;         
         }  */
+    }
+}
+
+void eavesdrop() {
+    
+    u8 sess_channel = A7105_findchannel();
+    
+    
+    //A7105_WriteReg(A7105_0F_CHANNEL, 0x3c);
+    
+    u8 prebind_packet[16];
+    int wait_start, wait_end;
+        
+    A7105_Strobe(A7105_RX);  
+    while(A7105_ReadReg(A7105_00_MODE) & 0x01)
+        delayMicroseconds(1);
+    A7105_ReadData(prebind_packet, 16);
+    A7105_WriteID((prebind_packet[2] << 24) | (prebind_packet[3] << 16) | (prebind_packet[4] << 8) | prebind_packet[5]);
+    
+    //A7105_WriteID(0x65DFF421);
+    wait_start = micros();
+    while(true) {
+        A7105_Strobe(A7105_RX);  
+        while(A7105_ReadReg(A7105_00_MODE) & 0x01) {
+            delayMicroseconds(1);
+            /*
+            if ((micros()-wait_start) > 5000000) {
+                Serial.println("Session terminated. Rescanning...");
+                return;
+            }
+            */
+        }
+        wait_end = micros();
+        A7105_ReadData(receivedpacket, 16);
+        Serial.print(wait_end - wait_start);
+        wait_start = micros();
+        Serial.print("ms : ");
+        printpacket(receivedpacket);
+    }
+}
+    
+u8 A7105_findchannel() { 
+    int pack_count;
+    while (true) {
+       for (int i = 0 ; i < 12 ; i++) {
+          pack_count = 0;
+          A7105_WriteReg(A7105_0F_CHANNEL, allowed_ch[i]);
+          for (int j = 0 ; j < 20 ; j++)
+              pack_count += A7105_sniffchannel();
+          if (pack_count > 0) {
+              Serial.println("Channel found");
+              return allowed_ch[i];
+          }
+       }
     }
 }
 

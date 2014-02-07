@@ -115,6 +115,7 @@ void A7105_ReadData(u8 *dpbuffer, u8 len);
 void make_test_packet(u8 testpacket[]);
 void printpacket(u8 packet[]);
 
+void eavesdrop(u32 sess_id, u8 sess_channel);
 void A7105_shoutchannel();
 void A7105_scanchannels(const u8 channels[]);
 void A7105_sniffchannel(u8 _channel);
