@@ -36,7 +36,7 @@ void loop() {
     //Serial.print("hubsanWait: " ); Serial.println(hubsanWait);
     //Serial.print("waitTime: " ); Serial.println(waitTime);
     //Serial.println(hubsanWait);
-    delayMicroseconds(hubsanWait);
+    delayMicroseconds(waitTime);
     startTime = micros();
   }
   */

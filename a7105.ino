@@ -356,9 +356,9 @@ void eavesdrop() {
         }
         wait_end = micros();
         A7105_ReadData(receivedpacket, 16);
-        Serial.print(wait_end - wait_start);
+        Serial.print((wait_end - wait_start)/1000);
         wait_start = micros();
-        Serial.print("ms : ");
+        Serial.print("µs : ");
         printpacket(receivedpacket);
     }
 }

@@ -210,9 +210,10 @@ static u16 hubsan_cb()
        A7105_ReadData(packet, 16);
        printpacket(packet);
         state++;
-        if (state == BIND_5)
-            A7105_WriteID((packet[2] << 24) | (packet[3] << 16) | (packet[4] << 8) | packet[5]);
-        
+        if (state == BIND_5) {
+            sessionid = (packet[2] << 24) | (packet[3] << 16) | (packet[4] << 8) | packet[5];
+            A7105_WriteID(sessionid);
+        }
         return 500;  //8msec elapsed time since last write;
     case BIND_8:
         Serial.println("Clause 4");
