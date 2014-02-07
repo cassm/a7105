@@ -32,7 +32,7 @@ void loop() {
     Serial.println(state);
     hubsanWait = hubsan_cb();
     finishTime=micros();
-    waitTime = hubsanWait - (micros() - startTime);
+    waitTime m= hubsanWait - (micros() - startTime);
     //Serial.print("hubsanWait: " ); Serial.println(hubsanWait);
     //Serial.print("waitTime: " ); Serial.println(waitTime);
     //Serial.println(hubsanWait);
@@ -42,10 +42,10 @@ void loop() {
   */
   
   
-   Serial.println(A7105_ReadReg(0x00)); 
+   //Serial.println(A7105_ReadReg(0x00)); 
   //A7105_shoutchannel();
   //A7105_sniffchannel();
   
-  //A7105_scanchannels(allowed_ch);
+  A7105_scanchannels(allowed_ch);
 }
 

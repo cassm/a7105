@@ -78,6 +78,7 @@ int A7105_calibrate_IF() {
         Serial.println("Error: IF filter calibration failed.");
         return 2;
     }
+    return 0;
 }
 
 int A7105_calibrate_VCB(u8 channel) {
@@ -109,6 +110,7 @@ int A7105_calibrate_VCB(u8 channel) {
           Serial.println(channel);
           return 2;  
     }
+    return 0;
 }
 
 // set the transmitter power on the chip
