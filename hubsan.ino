@@ -201,7 +201,9 @@ static u16 hubsan_cb()
     case BIND_4:
     case BIND_6:
         Serial.println("Clause 3");
-        if(!A7105_ReadReg(A7105_00_MODE) & 0x01) {
+        
+        // flipped 'not' here, I think it was wrong
+        if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
             state = BIND_1; //
             Serial.println("Restart");
             return 4500; //No signal, restart binding procedure.  12msec elapsed since last write
