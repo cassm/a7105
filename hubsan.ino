@@ -154,16 +154,24 @@ static void hubsan_build_packet()
     memset(packet, 0, 16);
     //20 00 00 00 80 00 7d 00 84 02 64 db 04 26 79 7b
     packet[0] = 0x20;
-    packet[2] = 0xAA; //throttle;//get_channel(2, 0x80, 0x80, 0x80);
-    packet[4] = 0xff - rudder; // get_channel(3, 0x80, 0x80, 0x80); //Rudder is reversed
-    packet[6] = 0xff - elevator; // get_channel(1, 0x80, 0x80, 0x80); //Elevator is reversed
-    packet[8] = aileron; // get_channel(0, 0x80, 0x80, 0x80);
+    packet[2] = 0xAA; // test value to try to get the motors to start
+    //packet[2] = throttle;
+    packet[4] = 0xff - rudder; // Rudder is reversed
+    packet[6] = 0xff - elevator; // Elevator is reversed
+    packet[8] = aileron;
+    
+    /* - V1 (X4 without LEDs)
     packet[9] = 0x02;
     packet[10] = 0x64;
     packet[11] = (txid >> 24) & 0xff;
     packet[12] = (txid >> 16) & 0xff;
     packet[13] = (txid >>  8) & 0xff;
     packet[14] = (txid >>  0) & 0xff;
+    */
+    
+    // V2 (X4 with LEDs)
+    packet[9] = 0x0e; // default: flips on, LEDs on.
+    packet[10] = 0x19; 
     update_crc();
 }
 
@@ -227,8 +235,8 @@ static u16 hubsan_cb()
        // test to see what is being received
        printpacket(packet);
         if(packet[1] == 9) {
-            state = DATA_1;
-            A7105_WriteReg(A7105_1F_CODE_I, 0x0F);
+            state = DATA_1; // shift to data mode
+            A7105_WriteReg(A7105_1F_CODE_I, 0x0F); // enable CRC
             PROTOCOL_SetBindState(0);
             return 28000; //35.5msec elapsed since last write
         } else {
