@@ -13,7 +13,7 @@ void setup() {
 void loop() {
   
   int startTime, waitTime, hubsanWait, finishTime;
-  
+  /*
   startTime = micros();
   while (1) {
     if (Serial.available()>4) {
@@ -26,7 +26,6 @@ void loop() {
       elevator=Serial.read();
       }
     }
-    throttle = 10;
     
       //if (state!=0 && state!=1 & state!=128) 
     Serial.print("State: ");
@@ -41,13 +40,13 @@ void loop() {
     startTime = micros();
   }
   
-  
+  */
   
   //Serial.println(A7105_ReadReg(0x00)); 
   //A7105_shoutchannel();
   //A7105_sniffchannel();
   
   //A7105_scanchannels(allowed_ch);
-  //eavesdrop();
+  eavesdrop();
 }
 

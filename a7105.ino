@@ -353,7 +353,7 @@ void eavesdrop() {
         while(A7105_ReadReg(A7105_00_MODE) & 0x01) {
             delayMicroseconds(1);
             
-            // if it takes more than a second, we can assume that the session has been terminated
+            // if it takes more than 5 seconds, we can assume that the session has been terminated
             if ((micros()-wait_start) > 5000000) {
                 Serial.println("Session terminated. Rescanning...");
                 // ...and therefore start listening for pre-bind packets again
@@ -383,7 +383,7 @@ u8 A7105_findchannel() {
           A7105_WriteReg(A7105_0F_CHANNEL, allowed_ch[i]);
           for (int j = 0 ; j < 20 ; j++)
               pack_count += A7105_sniffchannel();
-          if (pack_count > 0) {
+          if (pack_count > 3) {
               Serial.println("Channel found");
               return allowed_ch[i];
           }

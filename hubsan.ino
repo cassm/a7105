@@ -154,7 +154,7 @@ static void hubsan_build_packet()
     memset(packet, 0, 16);
     //20 00 00 00 80 00 7d 00 84 02 64 db 04 26 79 7b
     packet[0] = 0x20;
-    packet[2] = throttle;//get_channel(2, 0x80, 0x80, 0x80);
+    packet[2] = 0xAA; //throttle;//get_channel(2, 0x80, 0x80, 0x80);
     packet[4] = 0xff - rudder; // get_channel(3, 0x80, 0x80, 0x80); //Rudder is reversed
     packet[6] = 0xff - elevator; // get_channel(1, 0x80, 0x80, 0x80); //Elevator is reversed
     packet[8] = aileron; // get_channel(0, 0x80, 0x80, 0x80);
