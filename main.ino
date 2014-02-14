@@ -2,43 +2,55 @@ void setup() {
   
   Serial.begin(115200);
   Serial.println("Initialising...");
+
+  // SPI initialisation and mode configuration
   A7105_Setup();
   
+  // calibrate the chip and set the RF frequency, timing, transmission modes, session ID and channel
   initialize();
-  channel = 0x32;
-  A7105_WriteReg(A7105_0F_CHANNEL, 0x32);
+  
+  int startTime, waitTime, hubsanWait, finishTime;
+  
+  // start the timer for the first packet transmission
+  startTime = micros();
+  
   Serial.println("Initialisation Complete");
 }
 
-void loop() {
-  
-  int startTime, waitTime, hubsanWait, finishTime;
-  startTime = micros();
-  while (1) {
+void loop() {  
     if (Serial.available()>4) {
-      if (Serial.read()!=23) {
-          throttle = rudder = aileron = elevator = 0;
-      } else {
-      throttle=Serial.read();
-      rudder=Serial.read();
-      aileron=Serial.read();
-      elevator=Serial.read();
-      }
+        // if we are streaming data to serial, use that for RAEV  
+        if (Serial.read()!=23) {
+            rudder = aileron = elevator = 0x7F; 
+            throttle = 0;
+            
+        // otherwise, use sensible defaults
+        } else {
+          throttle=Serial.read();
+          rudder=Serial.read();
+          aileron=Serial.read();
+          elevator=Serial.read();
+        }
     }
     
-      //if (state!=0 && state!=1 & state!=128) 
+    // print information about which state the RF dialogue os currently in
     Serial.print("State: ");
     Serial.println(state);
+    
+    // perform the correct RF transaction
     hubsanWait = hubsan_cb();
+    
+    // stop timer for this packet
     finishTime = micros();
+    
+    // calculate how long to wait before transmitting the next packet
     waitTime = hubsanWait - (micros() - startTime);
-    //Serial.print("hubsanWait: " ); Serial.println(hubsanWait);
-    //Serial.print("waitTime: " ); Serial.println(waitTime);
-    //Serial.println(hubsanWait);
+    
+    // wait that long
     delayMicroseconds(waitTime);
+    
+    // start the timer again
     startTime = micros();
-  }
-  
   
   
   //Serial.println(A7105_ReadReg(0x00)); 

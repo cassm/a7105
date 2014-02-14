@@ -19,6 +19,7 @@
 
 
 const u8 allowed_ch[] = {0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50, 0x5a, 0x64, 0x6e, 0x78, 0x82};
+int no_allowed_channels = 12;
 
 
 // Set CS pin mode, initialse and set sensible defaults for SPI, set GIO1 as output on chip
@@ -378,7 +379,7 @@ void eavesdrop() {
 u8 A7105_findchannel() { 
     int pack_count;
     while (true) {
-       for (int i = 0 ; i < 12 ; i++) {
+       for (int i = 0 ; i < no_allowed_channels ; i++) {
           pack_count = 0;
           A7105_WriteReg(A7105_0F_CHANNEL, allowed_ch[i]);
           for (int j = 0 ; j < 20 ; j++)
@@ -419,7 +420,7 @@ void A7105_sniffchannel(u8 _channel) {
 // attempts sniffing 20 times on each channel before looping, print any results to serial
 void A7105_scanchannels(const u8 channels[]) {
     int packetsreceived;
-    for (int i = 0 ; i < 12 ; i++) {
+    for (int i = 0 ; i < no_allowed_channels ; i++) {
           packetsreceived = 0;
           Serial.println("");
           Serial.print("Switching to channel ");

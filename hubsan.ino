@@ -174,6 +174,7 @@ static void hubsan_build_packet()
     // V2 (X4 with LEDs)
     packet[9] = 0x0e; // default: flips on, LEDs on.
     packet[10] = 0x19; 
+    
     update_crc();
 }
 
@@ -281,7 +282,7 @@ static void initialize() {
            Serial.println("Hubsan_init failed.");
     }
     sessionid = rand();
-    channel = allowed_ch[rand() % sizeof(allowed_ch)]; //0x28; 
+    channel = allowed_ch[rand() % no_allowed_channels];
     state = BIND_1;
 }
 
