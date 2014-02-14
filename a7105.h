@@ -14,7 +14,8 @@ u8 channel;
 unsigned long sessionid;
 const unsigned long txid = 0xdb042679;
 u8 state;
-
+int startTime, waitTime, hubsanWait, finishTime;
+  
 
 // strobe commands. These are used to set the transceiver mode
 enum A7105_State {

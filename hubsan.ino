@@ -211,9 +211,8 @@ static u16 hubsan_cb()
     case BIND_2:
     case BIND_4:
     case BIND_6:
-        Serial.println("Clause 3");
+        //Serial.println("Clause 3");
         
-        // flipped 'not' here, I think it was wrong
         if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
             state = BIND_1; //
             Serial.println("Restart");
@@ -229,7 +228,7 @@ static u16 hubsan_cb()
         }
         return 500;  //8msec elapsed time since last write;
     case BIND_8:
-        Serial.println("Clause 4");
+        //Serial.println("Clause 4");
         if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
             state = BIND_7;
             return 15000; //22.5msec elapsed since last write
@@ -247,19 +246,24 @@ static u16 hubsan_cb()
             return 15000; //22.5 msec elapsed since last write
         }
     case DATA_1:
-        Serial.println("Clause 5");
+        //Serial.println("Clause 5");
         //Keep transmit power in sync
         A7105_SetPower(TXPOWER_150mW);
     case DATA_2:
     case DATA_3:
     case DATA_4:
     case DATA_5:
-        // surpress the throttle for the first 1000 loops. The motors will not start if this does not happen
-        if (cycles < 1000) {
+        // surpress the throttle for the first 125 loops. The motors will not start if this does not happen
+        if (cycles < 125) {
+            Serial.println("Throttle surpressed");
             throttle = 0;
             cycles++;
         }
-        Serial.println("Clause 6");
+        else {
+            Serial.println("Throttle engaged!");
+            throttle = 0xFF;
+        }
+        //Serial.println("Clause 6");
         hubsan_build_packet();
         A7105_WriteData(packet, 16, state == DATA_5 ? channel + 0x23 : channel);
         if (state == DATA_5)

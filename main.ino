@@ -9,20 +9,17 @@ void setup() {
   // calibrate the chip and set the RF frequency, timing, transmission modes, session ID and channel
   initialize();
   
-  int startTime, waitTime, hubsanWait, finishTime;
-  
-  // start the timer for the first packet transmission
-  startTime = micros();
-  
   Serial.println("Initialisation Complete");
 }
 
 void loop() {  
+    // start the timer for the first packet transmission
+    startTime = micros();
     if (Serial.available()>4) {
         // if we are streaming data to serial, use that for RAEV  
         if (Serial.read()!=23) {
             rudder = aileron = elevator = 0x7F; 
-            throttle = 0;
+            throttle = 0x7F;
             
         // otherwise, use sensible defaults
         } else {
@@ -34,8 +31,8 @@ void loop() {
     }
     
     // print information about which state the RF dialogue os currently in
-    Serial.print("State: ");
-    Serial.println(state);
+    //Serial.print("State: ");
+    //Serial.println(state);
     
     // perform the correct RF transaction
     hubsanWait = hubsan_cb();
