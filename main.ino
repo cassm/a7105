@@ -13,12 +13,11 @@ void setup() {
 void loop() {
   
   int startTime, waitTime, hubsanWait, finishTime;
- 
   startTime = micros();
   while (1) {
     if (Serial.available()>4) {
       if (Serial.read()!=23) {
-        throttle = rudder = aileron = elevator = 0;
+          throttle = rudder = aileron = elevator = 0;
       } else {
       throttle=Serial.read();
       rudder=Serial.read();

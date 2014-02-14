@@ -42,6 +42,8 @@ enum {
 };
 #define WAIT_WRITE 0x80
 
+int cycles = 0;
+
 int hubsan_init()
 {
     //set chip ID
@@ -154,8 +156,8 @@ static void hubsan_build_packet()
     memset(packet, 0, 16);
     //20 00 00 00 80 00 7d 00 84 02 64 db 04 26 79 7b
     packet[0] = 0x20;
-    packet[2] = 0xAA; // test value to try to get the motors to start
-    //packet[2] = throttle;
+    //packet[2] = 0xAA; // test value to try to get the motors to start
+    packet[2] = throttle;
     packet[4] = 0xff - rudder; // Rudder is reversed
     packet[6] = 0xff - elevator; // Elevator is reversed
     packet[8] = aileron;
@@ -251,6 +253,11 @@ static u16 hubsan_cb()
     case DATA_3:
     case DATA_4:
     case DATA_5:
+        // surpress the throttle for the first 1000 loops. The motors will not start if this does not happen
+        if (cycles < 1000) {
+            throttle = 0;
+            cycles++;
+        }
         Serial.println("Clause 6");
         hubsan_build_packet();
         A7105_WriteData(packet, 16, state == DATA_5 ? channel + 0x23 : channel);
