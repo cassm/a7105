@@ -1,5 +1,8 @@
 void setup() {
-  
+  pinMode(RED_LED, OUTPUT);
+  pinMode(BLUE_LED, OUTPUT);
+  RED_OFF();
+  BLUE_OFF();
   Serial.begin(115200);
   Serial.println("Initialising...");
 
@@ -20,12 +23,12 @@ void loop() {
     startTime = micros();
     if (Serial.available()>4) {
         // if we are streaming data to serial, use that for RAEV  
-        if (Serial.read() == 23) {
-          throttle=Serial.read();
-          rudder=Serial.read();
-          aileron=Serial.read();
-          elevator=Serial.read();
-        }
+        while (Serial.read() != 3);
+        throttle=Serial.read();
+        rudder=Serial.read();
+        aileron=Serial.read();
+        elevator=Serial.read();
+        // Serial.println("Values received");
     }
     
     // print information about which state the RF dialogue os currently in

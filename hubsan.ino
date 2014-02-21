@@ -180,13 +180,14 @@ static void hubsan_build_packet()
 
 static u16 hubsan_cb()
 {
+    RED_ON()
     int i, j;
     switch(state) {
     case BIND_1:
     case BIND_3:
     case BIND_5:
     case BIND_7:
-        Serial.println("Clause 1");
+        //Serial.println("Clause 1");
         hubsan_build_bind_packet(state == BIND_7 ? 9 : (state == BIND_5 ? 1 : state + 1 - BIND_1));
         A7105_Strobe(A7105_STANDBY);
         A7105_WriteData(packet, 16, channel);
@@ -196,7 +197,7 @@ static u16 hubsan_cb()
     case BIND_3 | WAIT_WRITE:
     case BIND_5 | WAIT_WRITE:
     case BIND_7 | WAIT_WRITE:
-        Serial.println("Clause 2");
+        //Serial.println("Clause 2");
         //wait for completion
         for(i = 0; i< 20; i++) {
           if(! (A7105_ReadReg(A7105_00_MODE) & 0x01))
@@ -237,6 +238,8 @@ static u16 hubsan_cb()
        // test to see what is being received
        printpacket(packet);
         if(packet[1] == 9) {
+            RED_OFF();
+            BLUE_ON();
             state = DATA_1; // shift to data mode
             A7105_WriteReg(A7105_1F_CODE_I, 0x0F); // enable CRC
             PROTOCOL_SetBindState(0);
