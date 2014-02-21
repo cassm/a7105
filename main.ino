@@ -9,6 +9,9 @@ void setup() {
   // calibrate the chip and set the RF frequency, timing, transmission modes, session ID and channel
   initialize();
   
+  rudder = aileron = elevator = 0x7F; 
+  throttle = 0x00;
+  
   Serial.println("Initialisation Complete");
 }
 
@@ -17,12 +20,7 @@ void loop() {
     startTime = micros();
     if (Serial.available()>4) {
         // if we are streaming data to serial, use that for RAEV  
-        if (Serial.read()!=23) {
-            rudder = aileron = elevator = 0x7F; 
-            throttle = 0x7F;
-            
-        // otherwise, use sensible defaults
-        } else {
+        if (Serial.read() == 23) {
           throttle=Serial.read();
           rudder=Serial.read();
           aileron=Serial.read();

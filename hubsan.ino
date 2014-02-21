@@ -259,10 +259,6 @@ static u16 hubsan_cb()
             throttle = 0;
             cycles++;
         }
-        else {
-            Serial.println("Throttle engaged!");
-            throttle = 0xFF;
-        }
         //Serial.println("Clause 6");
         hubsan_build_packet();
         A7105_WriteData(packet, 16, state == DATA_5 ? channel + 0x23 : channel);
