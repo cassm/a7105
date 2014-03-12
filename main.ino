@@ -1,9 +1,11 @@
 void setup() {
+  verbose = false;
   pinMode(RED_LED, OUTPUT);
   pinMode(BLUE_LED, OUTPUT);
   RED_OFF();
   BLUE_OFF();
   Serial.begin(115200);
+  Serial.flush();
   Serial.println("Initialising...");
 
   // SPI initialisation and mode configuration

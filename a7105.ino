@@ -36,7 +36,7 @@ void A7105_Setup() {
   // (this instructs the chip to use GIO1 as the output pin)
   A7105_WriteReg(0x0b,0x19); // 0b011001
   
-  Serial.println("Configuration complete.");
+  if (verbose) Serial.println("Configuration complete.");
 }
 
 // reset the chip
@@ -46,7 +46,7 @@ void A7105_Reset()
     A7105_WriteReg(0x00, 0x00);
     delayMicroseconds(100);
     A7105_WriteReg(0x0b,0x19);
-    Serial.println("Reset complete");
+    if (verbose) Serial.println("Reset complete");
 }    
 
 int A7105_calibrate_IF() {
@@ -66,7 +66,7 @@ int A7105_calibrate_IF() {
             break;
     }
     if (millis() - ms >= 500) {
-        Serial.println("Error: IF filter calibration has timed out.");
+        if (verbose) Serial.println("Error: IF filter calibration has timed out.");
         return 1;
     }
     
@@ -78,7 +78,7 @@ int A7105_calibrate_IF() {
 
     // check to see if auto calibration failure flag is set. If so, give error message and abort
     if(calibration_result & A7105_MASK_FBCF) {
-        Serial.println("Error: IF filter calibration failed.");
+        if (verbose) Serial.println("Error: IF filter calibration failed.");
         return 2;
     }
     return 0;
@@ -101,7 +101,7 @@ int A7105_calibrate_VCB(u8 channel) {
     
     // if not complete, issue timeout error and abort
     if (millis() - ms >= 500){
-          Serial.print("Error: VCO bank calibration timed out on channel ");
+          if (verbose) Serial.print("Error: VCO bank calibration timed out on channel ");
           Serial.println(channel);
           return 1;
         }
@@ -109,7 +109,7 @@ int A7105_calibrate_VCB(u8 channel) {
     // if auto calibration fail flag is high, print error and abort
     calibration_result = A7105_ReadReg(A7105_25_VCO_SBCAL_I);
     if (calibration_result & A7105_MASK_VBCF) {
-          Serial.print("Error: VCO bank calibration failed on channel ");
+          if (verbose) Serial.print("Error: VCO bank calibration failed on channel ");
           Serial.println(channel);
           return 2;  
     }
@@ -290,10 +290,11 @@ void make_test_packet(u8 testpacket[]) {
 void printpacket(u8 packet[]) {
   int j;
   //Serial.print("Packet received: ");
+  if (verbose) {
   for (j = 0 ; j < 16 ; j++) {
       Serial.print(packet[j], HEX);
       Serial.print(" ");
-  }
+  }}
   Serial.println("");
 }
 
@@ -315,7 +316,7 @@ void A7105_shoutchannel() {
            
         // if not cleared, give message and quit
         if (i == 20) {
-            Serial.println("Failed to complete write\n");
+            if (verbose) Serial.println("Failed to complete write\n");
             break;
         }
         // success message print - for debugging
@@ -327,7 +328,7 @@ void A7105_shoutchannel() {
 }
 
 void eavesdrop() {
-    
+    verbose = true;
     u8 prebind_packet[16];
     int wait_start, wait_end;
     
@@ -385,7 +386,7 @@ u8 A7105_findchannel() {
           for (int j = 0 ; j < 20 ; j++)
               pack_count += A7105_sniffchannel();
           if (pack_count > 3) {
-              Serial.println("Channel found");
+              if (verbose) Serial.println("Channel found");
               return allowed_ch[i];
           }
        }
@@ -407,7 +408,7 @@ int A7105_sniffchannel() {
 
 // version of sniffchannel which sniffs a channel other than the one which is currently set.
 void A7105_sniffchannel(u8 _channel) {
-      Serial.print("Switching to channel ");
+      if (verbose) Serial.print("Switching to channel ");
       Serial.println(_channel);
       Serial.println("");
       A7105_WriteReg(A7105_0F_CHANNEL, _channel);
@@ -420,6 +421,7 @@ void A7105_sniffchannel(u8 _channel) {
 // attempts sniffing 20 times on each channel before looping, print any results to serial
 void A7105_scanchannels(const u8 channels[]) {
     int packetsreceived;
+    verbose = true;
     for (int i = 0 ; i < no_allowed_channels ; i++) {
           packetsreceived = 0;
           Serial.println("");

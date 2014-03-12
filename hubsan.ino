@@ -88,7 +88,7 @@ int hubsan_init()
     A7105_Strobe(A7105_STANDBY);
     
     if (A7105_calibrate_IF() || A7105_calibrate_VCB(0x00) || A7105_calibrate_VCB(0xA0)) {
-        Serial.println("Error: calibration failed");
+        if (verbose) Serial.println("Error: calibration failed");
         return 0;
     }
 
@@ -96,7 +96,7 @@ int hubsan_init()
     //A7105_WriteReg(0x25, 0x08);
 
     A7105_SetPower(TXPOWER_150mW);
-    Serial.println("Power: Set 150mW");
+    if (verbose) Serial.println("Power: Set 150mW");
 
     A7105_Strobe(A7105_STANDBY);
     return 1;
@@ -204,7 +204,7 @@ static u16 hubsan_cb()
             break;
         }
         if (i == 20)
-            Serial.println("Failed to complete write\n");
+            if (verbose) Serial.println("Failed to complete write\n");
         A7105_Strobe(A7105_RX);
         state &= ~WAIT_WRITE;
         state++;
@@ -216,7 +216,7 @@ static u16 hubsan_cb()
         
         if(A7105_ReadReg(A7105_00_MODE) & 0x01) {
             state = BIND_1; //
-            Serial.println("Restart");
+            if (verbose) Serial.println("Restart");
             return 4500; //No signal, restart binding procedure.  12msec elapsed since last write
         } 
 
@@ -258,10 +258,15 @@ static u16 hubsan_cb()
     case DATA_5:
         // surpress the throttle for the first 125 loops. The motors will not start if this does not happen
         if (cycles < 125) {
-            Serial.println("Throttle surpressed");
-            throttle = 0;
+            if (verbose) Serial.println("Throttle surpressed");
+            throttle = 0; 
             cycles++;
         }
+        else if (cycles == 125) {
+          throttle = 15;
+          cycles++;
+        }
+          
         //Serial.println("Clause 6");
         hubsan_build_packet();
         A7105_WriteData(packet, 16, state == DATA_5 ? channel + 0x23 : channel);
@@ -278,11 +283,11 @@ static void initialize() {
     while(1) {
         A7105_Reset();
         if (hubsan_init()) {
-          Serial.println("Hubsan_init successful.");
+          if (verbose) Serial.println("Hubsan_init successful.");
           break;
         }
         else
-           Serial.println("Hubsan_init failed.");
+           if (verbose) Serial.println("Hubsan_init failed.");
     }
     sessionid = rand();
     channel = allowed_ch[rand() % no_allowed_channels];

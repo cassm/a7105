@@ -12,6 +12,7 @@
 #define CS_HI() digitalWrite(CS_PIN, HIGH);
 #define CS_LO() digitalWrite(CS_PIN, LOW);
 
+bool verbose;
 u8 packet[16];
 u8 testpacket[16];
 u8 receivedpacket[16];
