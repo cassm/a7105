@@ -2,10 +2,12 @@
 #define SETTING_PACKET 4
 #define LEDS_ON 0x05
 #define LEDS_OFF 0x06
+#define FLIPS_ON 0x07
 #define FLIPS_OFF 0x08
 
+uint8_t startval, command;
+  
 void setup() {
-  uint8_t startval, command;
   verbose = false;
   pinMode(RED_LED, OUTPUT);
   pinMode(BLUE_LED, OUTPUT);
@@ -66,6 +68,7 @@ void loop() {
           for ( int i = 0 ; i < 3 ; i++)
               Serial.read();
       }
+    }
     
     // print information about which state the RF dialogue os currently in
     //Serial.print("State: ");
