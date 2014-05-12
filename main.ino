@@ -1,4 +1,12 @@
+#define CONTROL_PACKET 3
+#define SETTING_PACKET 4
+#define LEDS_ON = 0x05
+#define LEDS_OFF = 0x06
+#define FLIPS_ON = 0x07
+#define FLIPS_OFF = 0x08
+
 void setup() {
+  uint8_t startval, command;
   verbose = false;
   pinMode(RED_LED, OUTPUT);
   pinMode(BLUE_LED, OUTPUT);
@@ -23,15 +31,42 @@ void setup() {
 void loop() {  
     // start the timer for the first packet transmission
     startTime = micros();
-    if (Serial.available()>4) {
-        // if we are streaming data to serial, use that for RAEV  
-        while (Serial.read() != 3);
-        throttle=Serial.read();
-        rudder=Serial.read();
-        aileron=Serial.read();
-        elevator=Serial.read();
-        // Serial.println("Values received");
-    }
+
+    // don't attempt to read from serial unless there is data being sent
+    if (Serial.available() > 4) {
+
+      // work through data on serial until we find the start of a packet
+      do {
+          startval = Serial.read();
+      }
+      while (startval != CONTROL_PACKET && startval != SETTING_PACKET);
+
+      if (startval == CONTROL_PACKET) {
+          throttle=Serial.read();
+          rudder=Serial.read();
+          aileron=Serial.read();
+          elevator=Serial.read();
+      }
+
+      else if (startval == SETTING_PACKET) {
+          command = Serial.read();
+          if (command == LEDS_ON) {
+              drone_settings |= 0x04;
+          }
+          else if (command == LEDS_OFF) {
+              drone_settings &= ~0x04;
+          }
+          else if (command == FLIPS_ON) {
+              drone_settings |= 0x08;
+          }
+          else if (command == FLIPS_OFF) {
+              drone_settings &= ~0x08;
+          }
+          
+          // clear unused bytes
+          for ( int i = 0 ; i < 3 ; i++)
+              Serial.read();
+      }
     
     // print information about which state the RF dialogue os currently in
     //Serial.print("State: ");

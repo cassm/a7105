@@ -25,6 +25,8 @@
 
 volatile s16 Channels[NUM_OUT_CHANNELS];
 
+uint8_t drone_settings = 0x0e; // 02 is always on, 04 is leds, 08 is flips
+
 enum {
     BIND_1,
     BIND_2,
@@ -172,7 +174,7 @@ static void hubsan_build_packet()
     */
     
     // V2 (X4 with LEDs)
-    packet[9] = 0x0e; // default: flips on, LEDs on.
+    packet[9] = drone_settings; // default: flips on, LEDs on.
     packet[10] = 0x19; 
     
     update_crc();
