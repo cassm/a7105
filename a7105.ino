@@ -327,6 +327,7 @@ void A7105_shoutchannel() {
     }
 }
 
+// Eavesdrop on a hubsan exchange. This must be started prior to the binding exchange.
 void eavesdrop() {
     verbose = true;
     u8 prebind_packet[16];
@@ -377,14 +378,20 @@ void eavesdrop() {
     }
 }
     
+// find which channel the binding exchange is taking place on
 u8 A7105_findchannel() { 
     int pack_count;
     while (true) {
+      // scan all allowed channels
        for (int i = 0 ; i < no_allowed_channels ; i++) {
           pack_count = 0;
           A7105_WriteReg(A7105_0F_CHANNEL, allowed_ch[i]);
+
+          // Listen on channel
           for (int j = 0 ; j < 20 ; j++)
               pack_count += A7105_sniffchannel();
+
+          // if channel has more than 3 packets, assume channel is correct
           if (pack_count > 3) {
               if (verbose) Serial.println("Channel found");
               return allowed_ch[i];
@@ -395,9 +402,16 @@ u8 A7105_findchannel() {
 
 // sniffs the currently set channel, prints packets to serial
 int A7105_sniffchannel() {
+       // put chip in receiver mode
        A7105_Strobe(A7105_RX);  
+
+       // wait for packet to arrive
        delayMicroseconds(3000);
+
+       // if flag is high, buffer has filled, meaning a packet has been intercepted
        if(!(A7105_ReadReg(A7105_00_MODE) & 0x01)) {
+
+           // accept and print packet
            A7105_ReadData(receivedpacket, 16);
            printpacket(receivedpacket);
            return 1;

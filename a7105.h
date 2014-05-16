@@ -1,10 +1,10 @@
 #ifndef _IFACE_A7105_H_
 #define _IFACE_A7105_H_
 
-
+// constants for arduino pins
 #define RED_LED 52
 #define BLUE_LED 53
-#define CS_PIN 10
+#define CS_PIN 10 
 #define RED_ON() digitalWrite(RED_LED, HIGH);
 #define RED_OFF() digitalWrite(RED_LED, LOW);
 #define BLUE_ON() digitalWrite(BLUE_LED, HIGH);
@@ -18,7 +18,7 @@ u8 testpacket[16];
 u8 receivedpacket[16];
 u8 channel;
 unsigned long sessionid;
-const unsigned long txid = 0xdb042679;
+const unsigned long txid = 0xdb042679; // transmitter ID
 u8 state;
 int startTime, waitTime, hubsanWait, finishTime;
   
@@ -109,22 +109,34 @@ void A7105_SetPower(int power);
 // Transmits the given strobe command. Commands are enumerated in a7105.h and detailed in the documentation
 void A7105_Strobe(enum A7105_State);
 
-
+// Access the current value of the transmitter ID
 void A7105_WriteID(u32 id);
 void A7105_ReadID();
 
+// Access an arbitrary register, given by addr
 void A7105_WriteReg(u8 addr, u8 value);
 u8 A7105_ReadReg(u8 addr);
 
+// Transmit or receive data through the FIFO buffer with current settings
 void A7105_WriteData(u8 *dpbuffer, u8 len, u8 channel);
 void A7105_ReadData(u8 *dpbuffer, u8 len);
 
+// Build a distinctive test packet
 void make_test_packet(u8 testpacket[]);
+
+// Print the provided packet in human-readable format
 void printpacket(u8 packet[]);
 
+// Eavesdrop on a hubsan exchange. This must be started prior to the binding exchange
 void eavesdrop(u32 sess_id, u8 sess_channel);
+
+// Shout a test packet on the current channel
 void A7105_shoutchannel();
+
+// Scan list of wireless channels for traffic
 void A7105_scanchannels(const u8 channels[]);
+
+// sniff either the current channel or a given channel
 void A7105_sniffchannel(u8 _channel);
 int A7105_sniffchannel();
 
