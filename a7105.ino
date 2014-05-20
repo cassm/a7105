@@ -336,15 +336,18 @@ void eavesdrop() {
     
     // use findchannel to locate the channel which is currently being broadcast on
     u8 sess_channel = A7105_findchannel();
+    // A7105_WriteReg(A7105_0F_CHANNEL, sess_channel);
+    Serial.println("Cloning transmitter ID...");
     
     // strobe to receiver mode, intercept a packet    
-    A7105_Strobe(A7105_RX);  
+    // A7105_Strobe(A7105_RX);  
     while(A7105_ReadReg(A7105_00_MODE) & 0x01)
-        delayMicroseconds(1);
+        delayMicroseconds(100);
     A7105_ReadData(prebind_packet, 16);
     
     // use the data from the packet to switch the chip over to the transactions session ID
     A7105_WriteID((prebind_packet[2] << 24) | (prebind_packet[3] << 16) | (prebind_packet[4] << 8) | prebind_packet[5]);
+    Serial.println("Transmitter ID cloned.");
     
     // It is now acceptable to allow the Tx to bind with an Rx
     

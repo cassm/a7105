@@ -28,6 +28,7 @@ void setup() {
 }
 
 void loop() {  
+    /*
     // start the timer for the first packet transmission
     startTime = micros();
 
@@ -85,13 +86,13 @@ void loop() {
     
     // start the timer again
     startTime = micros();
-  
+  */
   
   //Serial.println(A7105_ReadReg(0x00)); 
   //A7105_shoutchannel();
   //A7105_sniffchannel();
   
   //A7105_scanchannels(allowed_ch);
-  //eavesdrop();
+  eavesdrop();
 }
 
